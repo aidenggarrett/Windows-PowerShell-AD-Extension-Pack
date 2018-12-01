@@ -33,8 +33,8 @@ Function Get-ADGroupMemberDetail
 
     )
     
-    Get-ADGroupMember "COR-GG-STR FINCOM Acc" -Recursive -Server cor-wsw-dc10 | Sort-object name | ForEach-Object {
+    Get-ADGroupMember $GroupName -Recursive -Server $DC | Sort-object name | ForEach-Object {
         Get-ADUser -Identity $_ -Properties Title, emailAddress -Server cor-wsw-dc10:3268 | Select-Object name, SamAccountName, Title, EmailAddress
-    } | Export-Csv "C:\Scratch\COR-GG-STR FINCOM Acc.csv" -NoTypeInformation
+    } | Export-Csv $CSVOutput -NoTypeInformation
 
 }
