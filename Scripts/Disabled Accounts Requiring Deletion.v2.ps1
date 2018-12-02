@@ -1,37 +1,34 @@
-﻿# CORP - Disabled Accounts Requiring Deletion
+﻿# Reports on user accounts that require deleting.
+# Assumes that the account description starts with the word "Disabled"
 #
-# Author: Aiden Garrett
-# Company: Computacenter
-#
-# Revision: v2.3
-# Date: 16/02/2018
-#
-# Lists disabled accounts in preperation for deletion
-#
-# Version 2 Improvements:
-# Exports EmployeeType, Database and OU
-#
-# Version 2.1;
-# Amended Name for DisplayName
-#
-# Version 2.2;
-# Ignores accounts changed within the last 1 month
-#
-# Version 2.3;
-# Amended Mailbox & Database Information
+# AUTHOR: Aiden Garrett
+# GITHUB: https://github.com/aidenggarrett
 #
 
 #Requires -Version 3
 Import-Module ActiveDirectory -ErrorAction Inquire
 #Requires -Modules ActiveDirectory
 
-# Various variables
-$DC = "cor-wsw-dc10"
-# $Creds = Get-Credential
-$CSVOutput = "C:\Scratch\CORP - Disabled Accounts.csv"
-$Subject = "CORP - Disabled Accounts"
-$SMTPServer = "smtp.clarks.com"
-$TimeSpan = (Get-Date).AddMonths(-1)
+# Variables
+    $TimeSpan = # Time span, in days
+    $DC = # Domain Controller
+
+# CSV Variables
+    $CSVPath = # Output Location
+    $CSVDate = Get-Date -Format yyyyMMdd
+    $CSVFileName = # File Name 
+    $CSVName = $CSVFileName + " - " + $CSVDate +".csv" # This would become "computers - 20181201.csv"
+    $CSVOutput = $CSVPath+$CSVName
+
+# Email Variables
+    $EmailFrom = # Sender's email address
+    $EmailTo = # Recipient Addresses. For multiple, separate them with a comma.
+    $EmailSubject = # Subject
+    $EmailBody = # Insert email comments here.
+    $SMTPServer = # SMTP Server
+
+# Misc Variables
+    $TimeSpan = (Get-Date).AddMonths(-1)
 
 # Create Output Array
 
@@ -39,7 +36,7 @@ $OutCSV = @()
 
 # Get Usernames of users to be deleted
 
-$ADUsers = Get-ADUser -Filter 'Enabled -eq $false -and Description -like "Disabled*"' | Select-Object -ExpandProperty samAccountName
+$ADUsers = Get-ADUser -Filter 'Enabled -eq $false -and Description -like "Disabled*"' -Server $DC | Select-Object -ExpandProperty samAccountName
 
 # For each username, get further details and create an object
 
@@ -89,11 +86,7 @@ $ADUsers | ForEach-Object {
 
 $OutCSV | Where-Object {$_.DateDisabled -lt $TimeSpan}  | Sort-Object DateDisabled | Export-Csv $CSVOutput -NoTypeInformation
 
-<#
-
 # Attach our CSV and send it in an email
 
-Send-MailMessage -From "Garrett, Aiden <aiden.garrett@clarks.com>" -To "Garrett, Aiden <aiden.garrett@clarks.com>", "CC-System-Alerts <cc-system-alerts@clarks.com>" `
-    -Subject "$Subject" -Body "Disabled Accounts Requiring Deletion" -Attachments $CSVOutput -SmtpServer $SMTPServer
-
-#>
+Send-MailMessage -From $EmailFrom -To $EmailTo  `
+    -Subject $EmailSubject -Body $EmailBody -Attachments $CSVOutput -SmtpServer $SMTPServer
